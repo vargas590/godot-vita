@@ -116,6 +116,7 @@ uint64_t OS_Vita::get_ticks_usec() const
 String OS_Vita::get_stdin_string(bool p_block) { return ""; }
 
 void OS_Vita::swap_buffers() {
+	glClearColor(1.0, 0.0, 0.0, 1.0);
     gl_context->swap_buffers();
 }
 

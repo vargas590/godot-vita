@@ -34,19 +34,19 @@ def get_flags():
         ('builtin_bullet', True),
         ('builtin_enet', True), # Not in portlibs.
         ('builtin_freetype', False),
-        ('builtin_libogg', False),
-        ('builtin_libpng', False),
-        ('builtin_libtheora', False),
-        ('builtin_libvorbis', False),
-        ('builtin_libvpx', False),
-        ('builtin_libwebp', False),
+        ('builtin_libogg', True),
+        ('builtin_libpng', True),
+        ('builtin_libtheora', True),
+        ('builtin_libvorbis', True),
+        ('builtin_libvpx', True),
+        ('builtin_libwebp', True),
         ('builtin_libwebsockets', True), # Not in portlibs.
         ('builtin_mbedtls', False),
         ('builtin_miniupnpc', False),
-        ('builtin_opus', False),
+        ('builtin_opus', True),
         ('builtin_pcre2', False),
         ('builtin_squish', True), # Not in portlibs.
-        ('builtin_zlib', False),
+        ('builtin_zlib', True),
         ('builtin_zstd', True), # Not in portlibs.
         ('module_websocket_enabled', False),
         ('module_mbedtls_enabled', False),
@@ -64,44 +64,27 @@ def configure(env):
     env["LD"] = "arm-vita-eabi-ld"
     env["AR"] = "arm-vita-eabi-ar"
     env["STRIP"] = "arm-vita-eabi-strip"
+    env["RANLIB"] = "arm-vita-eabi-ranlib"
     ## Build type
 
     vita_sdk_path = os.environ.get("VITASDK")
 
+    pkg_config_path = "{}/arm-vita-eabi/lib/pkgconfig/pkgconfig"
+
+    os.environ["PKG_CONFIG_PATH"] = pkg_config_path
+    env['ENV']['PKG_CONFIG_PATH'] = pkg_config_path
+
+
     env.Prepend(CPPPATH=['{}/arm-vita-eabi/include'.format(os.environ.get("VITASDK"))])
     env.Prepend(CPPPATH=['{}/arm-vita-eabi/include/freetype2'.format(os.environ.get("VITASDK"))])
     env.Prepend(CPPPATH=['{}/share/gcc-arm-vita-eabi/samples/common'.format(os.environ.get("VITASDK"))])
-    env.Prepend(LIBPATH=['{}/arm-vita-eabi/lib'.format(os.environ.get("VITASDK"))])
-    env.Append(LINKFLAGS=["-Wl,-q"])
+    env.Append(LIBPATH=['{}/arm-vita-eabi/lib'.format(os.environ.get("VITASDK"))])
+    env.Prepend(LINKFLAGS=["-Wl,-q", "-unsafe"])
+    print(env.get("CPPPATH"))
 
-    env.Prepend(CPPFLAGS=['-D_POSIX_TIMERS', '-DUNIX_SOCKET_UNAVAILABLE', '-D__VITA__', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"'])
+    env.Prepend(CPPFLAGS=['-Wl,-q', '-unsafe', '-D_POSIX_TIMERS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"', "-g3"])
 
-    if (env["target"] == "release"):
-        # -O3 -ffast-math is identical to -Ofast. We need to split it out so we can selectively disable
-        # -ffast-math in code for which it generates wrong results.
-        if (env["optimize"] == "speed"): #optimize for speed (default)
-            env.Prepend(CCFLAGS=['-O3', '-ffast-math'])
-        else: #optimize for size
-            env.Prepend(CCFLAGS=['-Os'])
-     
-        if (env["debug_symbols"] == "yes"):
-            env.Prepend(CCFLAGS=['-g1'])
-        if (env["debug_symbols"] == "full"):
-            env.Prepend(CCFLAGS=['-g2'])
-
-    elif (env["target"] == "release_debug"):
-        if (env["optimize"] == "speed"): #optimize for speed (default)
-            env.Prepend(CCFLAGS=['-O2', '-ffast-math', '-DDEBUG_ENABLED'])
-        else: #optimize for size
-            env.Prepend(CCFLAGS=['-Os', '-DDEBUG_ENABLED'])
-
-        if (env["debug_symbols"] == "yes"):
-            env.Prepend(CCFLAGS=['-g1'])
-        if (env["debug_symbols"] == "full"):
-            env.Prepend(CCFLAGS=['-g2'])
-
-    elif (env["target"] == "debug"):
-        env.Prepend(CCFLAGS=['-g3', '-DDEBUG_ENABLED', '-DDEBUG_MEMORY_ENABLED'])
+    ARCH = ["-march=armv9-a", "-mtune=cortex-a9", "-mtp=soft"]
         #env.Append(LINKFLAGS=['-rdynamic'])
 
     ## Architecture
@@ -119,30 +102,29 @@ def configure(env):
     env.Append(CPPFLAGS=['-DPTHREAD_NO_RENAME'])
     env.Append(LIBS=[
         "libpib",
-        "stdc++",
+        "freetype",
+        "SceCommonDialog_stub",
+        "SceGxm_stub",
+        "SceDisplay_stub",
+        "pthread"
+
+    ])
+
+"""
+        "libpib",
+        "freetype",
         "SceLibKernel_stub",
         "ScePvf_stub",
-        "mathneon",
         "SceAppMgr_stub",
         "SceAppUtil_stub",
         "ScePgf_stub",
         "jpeg",
-        "freetype",
-        "c",
         "SceCommonDialog_stub",
-        "png16",
-        "m",
-        "z",
         "SceGxm_stub",
         "SceDisplay_stub",
         "SceSysmodule_stub",
         "vitashark",
         "SceShaccCg_stub",
-        "libtheora",
-        "libogg",
-        "libvorbis",
-        "opus",
-        "libwebp",
         "pthread"
-    ])
+"""
 #-lglad -lEGL -lglapi -ldrm_nouveau 

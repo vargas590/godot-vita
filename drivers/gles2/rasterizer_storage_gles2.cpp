@@ -90,7 +90,7 @@ GLuint RasterizerStorageGLES2::system_fbo = 0;
 #define glClearDepth glClearDepthf
 
 // enable extensions manually for android and ios
-#if !defined(UWP_ENABLED) && !defined(__VITA__)
+#if !defined(UWP_ENABLED) && !defined(VITA_ENABLED)
 #include <dlfcn.h> // needed to load extensions
 #endif
 
@@ -4926,7 +4926,7 @@ void RasterizerStorageGLES2::_render_target_allocate(RenderTarget *rt) {
 
 		glGenRenderbuffers(1, &rt->multisample_depth);
 		glBindRenderbuffer(GL_RENDERBUFFER, rt->multisample_depth);
-		#ifdef __VITA__
+		#ifdef VITA_ENABLED
 		glRenderbufferStorage(GL_RENDERBUFFER, config.depth_buffer_internalformat, rt->width, rt->height);
 		#else
 		glRenderbufferStorageMultisample(GL_RENDERBUFFER, msaa, config.depth_buffer_internalformat, rt->width, rt->height);

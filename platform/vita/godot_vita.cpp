@@ -9,6 +9,8 @@
 #include "main/main.h"
 #include "os_vita.h"
 
+#include <locale.h>
+
 extern "C"
 {
     unsigned int sleep(unsigned int seconds)
@@ -22,20 +24,23 @@ extern "C"
         sceKernelDelayThread(usec);
         return 0;
     }
-
-    void __sinit(struct _reent *);
-}
-
-__attribute__((constructor(101)))
-void pthread_setup(void) 
-{
-    pthread_init();
-    __sinit(_REENT);
 }
 
 int main(int argc, char *argv[])
 {
+    printf("Test godot!!!!");
+    return 0;
     OS_Vita os;
+
+    setlocale(LC_CTYPE, "");
+
+    char* args[] = {"-path", "ux0:/data/godot"};
+
+    Error err = Main::setup(argv[0], argc - 1, &argv[1]);
+
+    if (err != OK) {
+        return 255;
+    }
 
 	if (Main::start())
 		os.run(); // it is actually the OS that decides how to run
@@ -44,4 +49,5 @@ int main(int argc, char *argv[])
     sceMsgDialogTerm();
 
 	sceKernelExitProcess(os.get_exit_code());
+    return 0;
 }
