@@ -30,7 +30,7 @@
 
 #include "dir_access_unix.h"
 
-#if defined(UNIX_ENABLED) || defined(LIBC_FILEIO_ENABLED)
+#if defined(UNIX_ENABLED) || defined(LIBC_FILEIO_ENABLED) || defined(VITA_ENABLED)
 
 #include "core/list.h"
 #include "core/os/memory.h"
@@ -47,6 +47,7 @@
 
 #ifdef VITA_ENABLED
 #include <psp2/appmgr.h>
+#include <psp2/io/stat.h>
 #endif
 
 #ifdef HAVE_MNTENT
@@ -292,8 +293,11 @@ Error DirAccessUnix::make_dir(String p_dir) {
 		p_dir = get_current_dir().plus_file(p_dir);
 
 	p_dir = fix_path(p_dir);
-
+	#ifdef VITA_ENABLED
+	bool success = sceIoMkdir(p_dir.utf8().get_data(), 0777);
+	#else
 	bool success = (mkdir(p_dir.utf8().get_data(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == 0);
+	#endif
 	int err = errno;
 
 	if (success) {
@@ -309,8 +313,13 @@ Error DirAccessUnix::make_dir(String p_dir) {
 
 Error DirAccessUnix::change_dir(String p_dir) {
 
+
 	GLOBAL_LOCK_FUNCTION
 
+	#ifdef VITA_ENABLED
+	current_dir = p_dir;
+	return OK;
+	#else
 	p_dir = fix_path(p_dir);
 
 	// prev_dir is the directory we are changing out of
@@ -350,6 +359,7 @@ Error DirAccessUnix::change_dir(String p_dir) {
 	current_dir = try_dir;
 	ERR_FAIL_COND_V(chdir(prev_dir.utf8().get_data()) != 0, ERR_BUG);
 	return OK;
+	#endif
 }
 
 String DirAccessUnix::get_current_dir() {
@@ -393,7 +403,11 @@ Error DirAccessUnix::remove(String p_path) {
 		return FAILED;
 
 	if (S_ISDIR(flags.st_mode))
+		#if VITA_ENABLED
+		return sceIoRmdir(p_path.utf8().get_data()) == 0 ? OK : FAILED;
+		#else
 		return ::rmdir(p_path.utf8().get_data()) == 0 ? OK : FAILED;
+		#endif
 	else
 		return ::unlink(p_path.utf8().get_data()) == 0 ? OK : FAILED;
 }
@@ -437,13 +451,20 @@ DirAccessUnix::DirAccessUnix() {
 
 	/* determine drive count */
 
-	// set current directory to an absolute path of the current directory
+	#ifdef VITA_ENABLED
+	current_dir = "app0:";
+	change_dir("app0:");
+	#else
 	char real_current_dir_name[2048];
 	ERR_FAIL_COND(getcwd(real_current_dir_name, 2048) == NULL);
 	if (current_dir.parse_utf8(real_current_dir_name))
 		current_dir = real_current_dir_name;
 
 	change_dir(current_dir);
+	#endif
+
+	// set current directory to an absolute path of the current directory
+
 }
 
 DirAccessUnix::~DirAccessUnix() {

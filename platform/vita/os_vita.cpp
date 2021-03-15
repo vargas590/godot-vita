@@ -44,9 +44,19 @@
 #include "drivers/unix/thread_posix.h"
 #include "drivers/gles2/rasterizer_gles2.h"
 #include "main/main.h"
+#include "drivers/unix/dir_access_unix.h"
+#include "drivers/unix/file_access_unix.h"
+#include "core/os/dir_access.h"
+#include "core/os/file_access.h"
 
 void OS_Vita::initialize_core()
 {
+	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
+	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_USERDATA);
+	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_FILESYSTEM);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_RESOURCES);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_USERDATA);
+	DirAccess::make_default<DirAccessUnix>(DirAccess::ACCESS_FILESYSTEM);
 }
 
 void OS_Vita::finalize_core()

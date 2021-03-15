@@ -30,7 +30,7 @@
 
 #include "file_access_unix.h"
 
-#if defined(UNIX_ENABLED) || defined(LIBC_FILEIO_ENABLED)
+#if defined(UNIX_ENABLED) || defined(LIBC_FILEIO_ENABLED) || defined(VITA_ENABLED)
 
 #include "core/os/os.h"
 #include "core/print_string.h"
@@ -46,6 +46,10 @@
 
 #if !defined(ANDROID_ENABLED) && !defined(VITA_ENABLED)
 #include <sys/statvfs.h>
+#endif
+
+#ifdef VITA_ENABLED
+#include <psp2/io/stat.h>
 #endif
 
 #ifdef MSVC
@@ -343,7 +347,13 @@ Error FileAccessUnix::_set_unix_permissions(const String &p_file, uint32_t p_per
 
 	String file = fix_path(p_file);
 
+	#ifdef VITA_ENABLED
+	SceIoStat stat_s;
+	stat_s.st_mode = p_permissions;
+	int err = sceIoChstat(file.utf8().get_data(), &stat_s, SCE_CST_MODE);
+	#else
 	int err = chmod(file.utf8().get_data(), p_permissions);
+	#endif
 	if (!err) {
 		return OK;
 	}

@@ -865,6 +865,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 	// Network file system needs to be configured before globals, since globals are based on the
 	// 'project.godot' file which will only be available through the network if this is enabled
+	#ifndef VITA_ENABLED
 	FileAccessNetwork::configure();
 	if (remotefs != "") {
 
@@ -885,6 +886,7 @@ Error Main::setup(const char *execpath, int argc, char *argv[], bool p_second_ph
 
 		FileAccess::make_default<FileAccessNetwork>(FileAccess::ACCESS_RESOURCES);
 	}
+	#endif
 
 	if (globals->setup(project_path, main_pack, upwards) == OK) {
 #ifdef TOOLS_ENABLED

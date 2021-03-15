@@ -33,7 +33,7 @@ def get_flags():
         ("tools", False),
         ('builtin_bullet', True),
         ('builtin_enet', True), # Not in portlibs.
-        ('builtin_freetype', False),
+        ('builtin_freetype', True),
         ('builtin_libogg', True),
         ('builtin_libpng', True),
         ('builtin_libtheora', True),
@@ -82,14 +82,42 @@ def configure(env):
     env.Prepend(LINKFLAGS=["-Wl,-q", "-unsafe"])
     print(env.get("CPPPATH"))
 
-    env.Prepend(CPPFLAGS=['-Wl,-q', '-unsafe', '-D_POSIX_TIMERS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"', "-g3"])
+    env.Prepend(CPPFLAGS=['-Wl,-q', '-unsafe', '-D_POSIX_TIMERS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"'])
 
-    ARCH = ["-march=armv9-a", "-mtune=cortex-a9", "-mtp=soft"]
+
+    if (env["target"] == "release"):
+        # -O3 -ffast-math is identical to -Ofast. We need to split it out so we can selectively disable
+        # -ffast-math in code for which it generates wrong results.
+        if (env["optimize"] == "speed"): #optimize for speed (default)
+            env.Prepend(CCFLAGS=['-O3', '-ffast-math'])
+        else: #optimize for size
+            env.Prepend(CCFLAGS=['-Os'])
+     
+        if (env["debug_symbols"] == "yes"):
+            env.Prepend(CCFLAGS=['-g1'])
+        if (env["debug_symbols"] == "full"):
+            env.Prepend(CCFLAGS=['-g2'])
+
+    elif (env["target"] == "release_debug"):
+        if (env["optimize"] == "speed"): #optimize for speed (default)
+            env.Prepend(CCFLAGS=['-O2', '-ffast-math', '-DDEBUG_ENABLED'])
+        else: #optimize for size
+            env.Prepend(CCFLAGS=['-Os', '-DDEBUG_ENABLED'])
+
+        if (env["debug_symbols"] == "yes"):
+            env.Prepend(CCFLAGS=['-g1'])
+        if (env["debug_symbols"] == "full"):
+            env.Prepend(CCFLAGS=['-g2'])
+
+    elif (env["target"] == "debug"):
+        env.Prepend(CCFLAGS=['-g3', '-DDEBUG_ENABLED', '-DDEBUG_MEMORY_ENABLED'])
+        #env.Append(LINKFLAGS=['-rdynamic'])
+
         #env.Append(LINKFLAGS=['-rdynamic'])
 
     ## Architecture
 
-    env["bits"] = "64"
+    env["bits"] = "32"
 
     ## Flags
 
@@ -98,7 +126,7 @@ def configure(env):
     #    env.ParseConfig('aarch64-none-elf-pkg-config zlib --cflags --libs')
 
     env.Append(CPPPATH=['#platform/vita'])
-    env.Append(CPPFLAGS=['-DGLFW_INCLUDE_ES2' '-DLIBC_FILEIO_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED', '-DPTHREAD_ENABLED'])
+    env.Append(CPPFLAGS=['-DGLFW_INCLUDE_ES2', '-DLIBC_FILEIO_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED', '-DPTHREAD_ENABLED'])
     env.Append(CPPFLAGS=['-DPTHREAD_NO_RENAME'])
     env.Append(LIBS=[
         "libpib",
@@ -106,13 +134,11 @@ def configure(env):
         "SceCommonDialog_stub",
         "SceGxm_stub",
         "SceDisplay_stub",
-        "pthread"
-
+        "pthread",
     ])
 
 """
         "libpib",
-        "freetype",
         "SceLibKernel_stub",
         "ScePvf_stub",
         "SceAppMgr_stub",
