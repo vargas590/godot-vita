@@ -41,8 +41,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef ANDROID_ENABLED
+#if !defined(ANDROID_ENABLED) && !defined(VITA_ENABLED)
 #include <sys/statvfs.h>
+#endif
+
+#ifdef VITA_ENABLED
+#include <psp2/appmgr.h>
 #endif
 
 #ifdef HAVE_MNTENT
@@ -141,6 +145,10 @@ String DirAccessUnix::get_next() {
 	// the type is a link, in that case we want to resolve the link to
 	// known if it points to a directory. stat() will resolve the link
 	// for us.
+	#ifdef VITA_ENABLED
+	#define SCE_SO_ISDIR(m)	(((m) & SCE_SO_IFMT) == SCE_SO_IFDIR)
+	_cisdir = SCE_SO_ISDIR(entry->d_stat.st_attr);
+	#else
 	if (entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
 		String f = current_dir.plus_file(fname);
 
@@ -153,6 +161,8 @@ String DirAccessUnix::get_next() {
 	} else {
 		_cisdir = (entry->d_type == DT_DIR);
 	}
+	#endif
+
 
 	_cishidden = is_hidden(fname);
 
@@ -390,6 +400,13 @@ Error DirAccessUnix::remove(String p_path) {
 
 size_t DirAccessUnix::get_space_left() {
 
+#ifdef VITA_ENABLED
+	uint64_t max_size;
+	uint64_t free_size;
+	sceAppMgrGetDevInfo("ux0:", &max_size, &free_size);
+	return free_size;
+#else
+
 #ifndef NO_STATVFS
 	struct statvfs vfs;
 	if (statvfs(current_dir.utf8().get_data(), &vfs) != 0) {
@@ -401,6 +418,7 @@ size_t DirAccessUnix::get_space_left() {
 #else
 	// FIXME: Implement this.
 	return 0;
+#endif
 #endif
 };
 

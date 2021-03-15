@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+
+Import('env')
+
+files = [
+	"os_vita.cpp",
+	"godot_vita.cpp",
+	"context_vitagl.cpp",
+]
+
+prog = env.add_program('#bin/godot', files)
+build_target = env['target']
+env.Append(BUILDERS = {
+    'VitaELF' : Builder(action = 'vita-elf-create $SOURCE $TARGET'),
+    'VitaEBOOT' : Builder(action = 'vita-make-fself $SOURCE $TARGET'),
+    'VitaParamSFO' : Builder(action = 'vita-mksfoex -s TITLE_ID=$title_id "$title_name" "$TARGET"', suffix=".sfo"),
+    'VitaVPK' : Builder(action = 'vita-pack-vpk --sfo=$sfo --eboot=$eboot $TARGET', source_factory=env.fs.Dir)
+    }
+)
+
+env.VitaELF("#bin/vita_" + env['target'] + ".velf", prog)
+env.VitaEBOOT("#bin/eboot.bin", "#bin/vita_" + env['target'] + ".velf")

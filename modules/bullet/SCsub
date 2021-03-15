@@ -176,7 +176,7 @@ if env["builtin_bullet"]:
         "BulletSoftBody/btDeformableMultiBodyDynamicsWorld.cpp",
         "BulletSoftBody/btDeformableContactConstraint.cpp",
         # clew
-        "clew/clew.c",
+        #"clew/clew.c",
         # LinearMath
         "LinearMath/btAlignedAllocator.cpp",
         "LinearMath/btConvexHull.cpp",
