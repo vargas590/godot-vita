@@ -83,7 +83,8 @@ public:
     virtual void delay_usec(uint32_t p_usec) const;
     virtual uint64_t get_ticks_usec() const;
     virtual String get_stdin_string(bool p_block = true);
-
+	virtual int get_audio_driver_count() const;
+	virtual const char *get_audio_driver_name(int p_driver) const;
     OS_Vita();
     
 };

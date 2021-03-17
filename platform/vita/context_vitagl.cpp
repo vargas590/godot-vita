@@ -4,12 +4,22 @@
 #include <GLES2/gl2ext.h>
 #include <psp2/message_dialog.h>
 #include "core/error_list.h"
+#include <psp2/kernel/clib.h>
 
 Error Context_VitaGL::initialize() {
-    PibOptions options = (PibOptions)(PIB_SHACCCG | PIB_NOSTDLIB | PIB_ENABLE_MSAA);
-    pibInit(options);
+    return OK;
+    sceClibPrintf("Piglet init!\n");
+    PibError err = pibInit((PibOptions)0);
+    if (err != PibError::PIB_SUCCESS) {
+        sceClibPrintf("Error initiailzing PIB, error code %d\n", err);
+    }
+    sceClibPrintf("Error initiailzing PIB, error code %d\n", err);
+    sceClibPrintf("Piglet init we livin!\n");
+
 
     display = eglGetDisplay(0);
+    sceClibPrintf("Display!\n");
+
 
     EGLint majorVersion;
     EGLint minorVersion;
@@ -31,18 +41,28 @@ Error Context_VitaGL::initialize() {
         EGL_NONE };
 
     eglInitialize(display, &majorVersion, &minorVersion);  // You can use these boolean returns for error handling. This is not shown here
+    sceClibPrintf("egl initialize!\n");
 
     eglBindAPI(EGL_OPENGL_ES_API);
+    sceClibPrintf("egl bind api!\n");
 
     eglChooseConfig(display, configAttribs, &config, 1, &numConfigs);
 
+    sceClibPrintf("egl choose config!\n");
+
+
     surface = eglCreateWindowSurface(display, config, VITA_WINDOW_960X544, NULL);  // You can choose your display resoltion, up to 1080p on the PSTV (Vita requires SharpScale)
+
+    sceClibPrintf("egl surface!\n");
+
 
     EGLContext context = eglCreateContext(display, config, EGL_NO_CONTEXT, contextAttribs);
 
     eglMakeCurrent(display, surface, surface, context);
     eglQuerySurface(display, surface, EGL_WIDTH, &surface_width);
     eglQuerySurface(display, surface, EGL_HEIGHT, &surface_height);
+    sceClibPrintf("EGL VENDOR: %s\nEGL VERSION: %s\nEGL EXTENSIONS: %s\n", eglQueryString(display, EGL_VENDOR), eglQueryString(display, EGL_VERSION), eglQueryString(display, EGL_EXTENSIONS));
+    sceClibPrintf("Surface Width: %d, Surface Height: %d\n", surface_width, surface_height);
     return OK;
 }
 

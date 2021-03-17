@@ -48,6 +48,10 @@
 #include "drivers/unix/file_access_unix.h"
 #include "core/os/dir_access.h"
 #include "core/os/file_access.h"
+#include "drivers/dummy/rasterizer_dummy.h"
+#include "drivers/dummy/texture_loader_dummy.h"
+#include "servers/audio_server.h"
+#include <psp2/incoming_dialog.h> 
 
 void OS_Vita::initialize_core()
 {
@@ -65,6 +69,7 @@ void OS_Vita::finalize_core()
 
 void OS_Vita::finalize()
 {
+	sceIncomingDialogFinish();
 	visual_server->finish();
 	memdelete(visual_server);
 	memdelete(gl_context);
@@ -130,6 +135,15 @@ void OS_Vita::swap_buffers() {
     gl_context->swap_buffers();
 }
 
+int OS_Vita::get_audio_driver_count() const {
+	return 1;
+}
+
+const char *OS_Vita::get_audio_driver_name(int p_driver) const {
+
+	return "Dummy";
+}
+
 Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_audio_driver) {
 
 	//args = OS::get_singleton()->get_cmdline_args();
@@ -142,11 +156,15 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
     gl_context = memnew(Context_VitaGL());
 
     gl_context->initialize();
+	
+	RasterizerDummy::make_current();
+	
+	AudioDriverManager::initialize(p_audio_driver);
 
-    if (RasterizerGLES2::is_viable()) {
+    /*if (RasterizerGLES2::is_viable()) {
         RasterizerGLES2::register_config();
         RasterizerGLES2::make_current();
-    }
+    }*/
 
 	visual_server = memnew(VisualServerRaster);
 	if (get_render_thread_mode() != RENDER_THREAD_UNSAFE)
@@ -158,7 +176,7 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
 
 	visual_server->init();
 
-
+	sceIncomingDialogInitialize(0);
 
 	return OK;
 }
@@ -209,26 +227,53 @@ bool OS_Vita::_check_internal_feature_support(const String &p_feature) {
 	return false;
 }
 
+/*
+	SceInt32 sdkVersion;
+	SceChar8 audioPath[0x80];           //Path to audio file that will be played during dialog, .mp3, .at9, m4a. Can be NULL
+	SceChar8 titleid[0x10];             //TitleId of the application to open when "accept" button has been pressed. Can be NULL
+	SceInt32 unk_BC;                    //Can be set to 0
+	SceUInt32 dialogTimer;              //Time to show dialog in seconds
+	SceChar8 reserved1[0x3E];
+	SceWChar16 buttonRightText[0x1F];   //Text for "accept" button
+	SceInt16 separator0;                //must be 0
+	SceWChar16 buttonLeftText[0x1F];    //Text for "reject" button. If NULL, only "accept" button will be created
+	SceInt16 separator1;                //must be 0
+	SceWChar16 dialogText[0x80];        //Text for dialog window, also shared with notification
+	SceInt16 separator2;                //must be 0
+*/
+
+#include <locale>
+
+char16_t* str16cpy(char16_t* destination, const char16_t* source)
+{
+    char16_t* temp = destination;
+    while((*temp++ = *source++) != 0)
+    ;
+    return destination;
+}
+
+void utf8_to_utf16(uint8_t *src, uint16_t *dst) {
+	int i;
+	for (i = 0; src[i];) {
+		if ((src[i] & 0xE0) == 0xE0) {
+			*(dst++) = ((src[i] & 0x0F) << 12) | ((src[i + 1] & 0x3F) << 6) | (src[i + 2] & 0x3F);
+			i += 3;
+		} else if ((src[i] & 0xC0) == 0xC0) {
+			*(dst++) = ((src[i] & 0x1F) << 6) | (src[i + 1] & 0x3F);
+			i += 2;
+		} else {
+			*(dst++) = src[i];
+			i += 1;
+		}
+	}
+
+	*dst = '\0';
+}
 
 
 void OS_Vita::alert(const String &p_alert, const String &p_title)
 {
-    SceMsgDialogParam msgParam;
-	SceMsgDialogUserMessageParam userMsgParam;
-
-	sceMsgDialogParamInit(&msgParam);
-	msgParam.mode = SCE_MSG_DIALOG_MODE_USER_MSG;
-
-	sceClibMemset(&userMsgParam, 0, sizeof(SceMsgDialogUserMessageParam));
-	msgParam.userMsgParam = &userMsgParam;
-	msgParam.userMsgParam->msg = (SceChar8 *)p_alert.c_str();
-	msgParam.userMsgParam->buttonType = SCE_MSG_DIALOG_BUTTON_TYPE_OK;
-
-	msgParam.commonParam.infobarParam = NULL;
-	msgParam.commonParam.bgColor = NULL;
-	msgParam.commonParam.dimmerColor = NULL;
-
-	sceMsgDialogInit(&msgParam);
+	return;
 }
 
 Point2 OS_Vita::get_mouse_position() const
