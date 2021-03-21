@@ -51,7 +51,6 @@
 #include "drivers/dummy/rasterizer_dummy.h"
 #include "drivers/dummy/texture_loader_dummy.h"
 #include "servers/audio_server.h"
-#include <psp2/incoming_dialog.h> 
 
 void OS_Vita::initialize_core()
 {
@@ -69,7 +68,6 @@ void OS_Vita::finalize_core()
 
 void OS_Vita::finalize()
 {
-	sceIncomingDialogFinish();
 	visual_server->finish();
 	memdelete(visual_server);
 	memdelete(gl_context);
@@ -175,8 +173,6 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
     video_driver_index = p_video_driver;
 
 	visual_server->init();
-
-	sceIncomingDialogInitialize(0);
 
 	return OK;
 }

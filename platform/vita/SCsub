@@ -27,4 +27,4 @@ env.Command(stripped_elf_path, prog, [
 env.VitaELF("#bin/vita_" + env['target'] + ".velf", stripped_elf_path)
 env.VitaEBOOT("#bin/eboot.bin", "#bin/vita_" + env['target'] + ".velf")
 env.VitaParamSFO("#bin/param.sfo", source=[], title_id="EIRT00001", title_name="Godot Engine Turbo16")
-env.VitaVPK("#bin/out.vpk", source=[], sfo="bin/param.sfo", eboot="bin/eboot.bin")
+#env.VitaVPK("#bin/out.vpk", source=[], sfo="bin/param.sfo", eboot="bin/eboot.bin")

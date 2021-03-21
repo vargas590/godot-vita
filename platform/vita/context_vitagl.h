@@ -32,6 +32,7 @@
 
 #include "core/error_list.h"
 #include "core/os/os.h"
+#include <pib.h>
 #include <EGL/egl.h>
 
 class Context_VitaGL {

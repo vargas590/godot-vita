@@ -34,7 +34,7 @@ def get_flags():
         ('builtin_bullet', True),
         ('builtin_enet', True), # Not in portlibs.
         ('builtin_freetype', True),
-        ('builtin_libogg', True),
+        ('builtin_libogg', False),
         ('builtin_libpng', True),
         ('builtin_libtheora', True),
         ('builtin_libvorbis', True),
@@ -54,7 +54,20 @@ def get_flags():
         ('module_enet_enabled', False),
         ('module_gdnative_enabled', False),
         ('module_regex_enabled', False),
-        ('module_webm_enabled', False)
+        ('module_webm_enabled', False),
+        ('module_mobile_vr_enabled', False),
+        ('module_csg_enabled', False),
+        ('module_dds_enabled', False),
+        ('module_visual_script_enabled', False),
+        ('disable_3d', True),
+        ('minizip', False),
+        ('disable_advanced_gui', True),
+        ('deprecated', False),
+        ('module_gdnavigation_enabled', False),
+        ('module_gridmap_enabled', False),
+        ('module_hdr_enabled', False),
+        ('module_opensimplex_enabled', False),
+        ('module_visual_script_enabled', False),
         ]
 
 
@@ -79,10 +92,10 @@ def configure(env):
     env.Prepend(CPPPATH=['{}/arm-vita-eabi/include/freetype2'.format(os.environ.get("VITASDK"))])
     env.Prepend(CPPPATH=['{}/share/gcc-arm-vita-eabi/samples/common'.format(os.environ.get("VITASDK"))])
     env.Append(LIBPATH=['{}/arm-vita-eabi/lib'.format(os.environ.get("VITASDK"))])
-    env.Prepend(LINKFLAGS=["-Wl,-q", "-unsafe", "-Wl,-z,nocopyreloc"])
-    print(env.get("CPPPATH"))
+    env.Prepend(LINKFLAGS=["-Wl,-q"])
+    print(env.get("CCFLAGS"))
 
-    env.Prepend(CPPFLAGS=['-Wl,-q', '-unsafe', '-D_POSIX_TIMERS', '-DNO_THREADS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"'])
+    env.Prepend(CCFLAGS=['-Wl,-q', '-D_POSIX_TIMERS', '-DNO_THREADS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"'])
 
 
     if (env["target"] == "release"):
@@ -126,22 +139,17 @@ def configure(env):
     #    env.ParseConfig('aarch64-none-elf-pkg-config zlib --cflags --libs')
 
     env.Append(CPPPATH=['#platform/vita'])
-    env.Append(CPPFLAGS=['-DGLFW_INCLUDE_ES2', '-DLIBC_FILEIO_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED'])
+    env.Append(CPPFLAGS=['-DLIBC_FILEIO_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED'])
     env.Append(CPPFLAGS=['-DPTHREAD_NO_RENAME'])
     env.Append(LIBS=[
         "pib",
         "SceLibKernel_stub",
         "SceKernelThreadMgr_stub",
-        "SceSysmodule_stub",
         "SceIofilemgr_stub",
-        "freetype",
-        "SceCommonDialog_stub",
         "SceGxm_stub",
         "SceDisplay_stub",
-        "SceCtrl_stub",
-        "SceTouch_stub",
-        "liblibScePiglet_stub",
-        "SceIncomingDialog_stub"
+        "SceFios2_stub",
+        "ogg"
     ])
     print(env.get("LIBS"))
 

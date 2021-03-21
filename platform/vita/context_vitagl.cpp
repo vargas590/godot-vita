@@ -1,15 +1,10 @@
 #include "context_vitagl.h"
-#include <pib.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
-#include <psp2/message_dialog.h>
 #include "core/error_list.h"
 #include <psp2/kernel/clib.h>
 
 Error Context_VitaGL::initialize() {
-    return OK;
     sceClibPrintf("Piglet init!\n");
-    PibError err = pibInit((PibOptions)0);
+    PibError err = pibInit((PibOptions)(PIB_SHACCCG | PIB_ENABLE_MSAA));
     if (err != PibError::PIB_SUCCESS) {
         sceClibPrintf("Error initiailzing PIB, error code %d\n", err);
     }
@@ -19,6 +14,7 @@ Error Context_VitaGL::initialize() {
 
     display = eglGetDisplay(0);
     sceClibPrintf("Display!\n");
+    return OK;
 
 
     EGLint majorVersion;
