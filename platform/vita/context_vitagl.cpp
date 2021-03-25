@@ -4,7 +4,7 @@
 
 Error Context_VitaGL::initialize() {
     sceClibPrintf("Piglet init!\n");
-    PibError err = pibInit((PibOptions)(PIB_SHACCCG | PIB_ENABLE_MSAA));
+    PibError err = pibInit((PibOptions)(PIB_SHACCCG));
     if (err != PibError::PIB_SUCCESS) {
         sceClibPrintf("Error initiailzing PIB, error code %d\n", err);
     }
@@ -14,8 +14,6 @@ Error Context_VitaGL::initialize() {
 
     display = eglGetDisplay(0);
     sceClibPrintf("Display!\n");
-    return OK;
-
 
     EGLint majorVersion;
     EGLint minorVersion;

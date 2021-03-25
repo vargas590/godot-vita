@@ -49,7 +49,8 @@
 #endif
 
 #ifdef VITA_ENABLED
-#include <psp2/io/stat.h>
+#include <sys/stat.h>
+#include <psp2/kernel/iofilemgr/stat.h>
 #endif
 
 #ifdef MSVC

@@ -159,16 +159,10 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
 	
 	AudioDriverManager::initialize(p_audio_driver);
 
-    /*if (RasterizerGLES2::is_viable()) {
-        RasterizerGLES2::register_config();
-        RasterizerGLES2::make_current();
-    }*/
+	RasterizerGLES2::register_config();
+	RasterizerGLES2::make_current();
 
 	visual_server = memnew(VisualServerRaster);
-	if (get_render_thread_mode() != RENDER_THREAD_UNSAFE)
-	{
-		visual_server = memnew(VisualServerWrapMT(visual_server, get_render_thread_mode() == RENDER_SEPARATE_THREAD));
-	}
     
     video_driver_index = p_video_driver;
 

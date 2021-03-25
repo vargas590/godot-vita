@@ -129,7 +129,7 @@ def include_file_in_legacygl_header(filename, header_data, depth):
                     header_data.ubos += [(x, ubo)]
                     header_data.ubo_names += [x]
 
-        elif line.find("uniform") != -1 and line.find("{") == -1 and line.find(";") != -1:
+        elif line.find("uniform") != -1 and line.find("{") == -1 and line.find(",") != -1:
             uline = line.replace("uniform", "")
             uline = uline.replace(";", "")
             lines = uline.split(",")
@@ -140,9 +140,10 @@ def include_file_in_legacygl_header(filename, header_data, depth):
                 if x.find("[") != -1:
                     # unfiorm array
                     x = x[: x.find("[")]
-
-                if not x in header_data.uniforms:
-                    header_data.uniforms += [x]
+                if x != "":
+                    if not x in header_data.uniforms:
+                        header_data.uniforms += [x]
+                
 
         if line.strip().find("attribute ") == 0 and line.find("attrib:") != -1:
             uline = line.replace("in ", "")

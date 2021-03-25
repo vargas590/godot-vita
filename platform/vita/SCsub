@@ -11,9 +11,9 @@ files = [
 prog = env.add_program('#bin/godot', files)
 build_target = env['target']
 env.Append(BUILDERS = {
-    'VitaELF' : Builder(action = 'vita-elf-create $SOURCE $TARGET'),
-    'VitaEBOOT' : Builder(action = 'vita-make-fself $SOURCE $TARGET'),
-    'VitaParamSFO' : Builder(action = 'vita-mksfoex -s TITLE_ID=$title_id "$title_name" "$TARGET" -d ATTRIBUTE2=12 -d PARENTAL_LEVEL=1', suffix=".sfo"),
+    'VitaELF' : Builder(action = 'dolce-elf-create -h 4194304 $SOURCE $TARGET'),
+    'VitaEBOOT' : Builder(action = 'dolce-make-fself $SOURCE $TARGET'),
+    'VitaParamSFO' : Builder(action = 'dolce-mksfoex -s TITLE_ID=$title_id "$title_name" "$TARGET" -d ATTRIBUTE2=12 -d PARENTAL_LEVEL=1', suffix=".sfo"),
     'VitaVPK' : Builder(action = 'vita-pack-vpk --sfo=$sfo --eboot=$eboot $TARGET', source_factory=env.fs.Dir),
     }
 )
@@ -22,9 +22,9 @@ stripped_elf_path = "#bin/vita_" + env['target'] + "_stripped"
 
 env.Command(stripped_elf_path, prog, [
     Copy("$TARGET", "$SOURCE"),
-    "arm-vita-eabi-strip --strip-unneeded $TARGET"
+    "arm-dolce-eabi-strip --strip-unneeded $TARGET"
 ])
 env.VitaELF("#bin/vita_" + env['target'] + ".velf", stripped_elf_path)
 env.VitaEBOOT("#bin/eboot.bin", "#bin/vita_" + env['target'] + ".velf")
-env.VitaParamSFO("#bin/param.sfo", source=[], title_id="EIRT00001", title_name="Godot Engine Turbo16")
+env.VitaParamSFO("#bin/sce_sys/param.sfo", source=[], title_id="EIRT00001", title_name="Godot Engine Turbo16 Debugger")
 #env.VitaVPK("#bin/out.vpk", source=[], sfo="bin/param.sfo", eboot="bin/eboot.bin")

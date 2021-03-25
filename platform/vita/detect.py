@@ -11,7 +11,7 @@ def get_name():
 
 def can_build():
     # Check the minimal dependencies
-    if "VITASDK" not in os.environ:
+    if "DOLCESDK" not in os.environ:
         print("VITASDK not defined in environment.. vita diabled.")
         return False
     return True
@@ -31,22 +31,22 @@ def get_opts():
 def get_flags():
     return [
         ("tools", False),
-        ('builtin_bullet', True),
-        ('builtin_enet', True), # Not in portlibs.
-        ('builtin_freetype', True),
+        ('builtin_bullet', False),
+        ('builtin_enet', False), # Not in portlibs.
+        ('builtin_freetype', False),
         ('builtin_libogg', False),
-        ('builtin_libpng', True),
-        ('builtin_libtheora', True),
-        ('builtin_libvorbis', True),
-        ('builtin_libvpx', True),
+        ('builtin_libpng', False),
+        ('builtin_libtheora', False),
+        ('builtin_libvorbis', False),
+        ('builtin_libvpx', False),
         ('builtin_libwebp', True),
         ('builtin_libwebsockets', True), # Not in portlibs.
         ('builtin_mbedtls', False),
         ('builtin_miniupnpc', False),
-        ('builtin_opus', True),
+        ('builtin_opus', False),
         ('builtin_pcre2', False),
         ('builtin_squish', True), # Not in portlibs.
-        ('builtin_zlib', True),
+        ('builtin_zlib', False),
         ('builtin_zstd', True), # Not in portlibs.
         ('module_websocket_enabled', False),
         ('module_mbedtls_enabled', False),
@@ -68,30 +68,36 @@ def get_flags():
         ('module_hdr_enabled', False),
         ('module_opensimplex_enabled', False),
         ('module_visual_script_enabled', False),
+        ('module_bullet_enabled', False),
+        ('module_webxr_enabled', False),
+        ('module_jsonrpc_enabled', False),
+        ('module_jpg_enabled', False),
+        ('module_tga_enabled', False)
         ]
 
 
 def configure(env):
-    env["CC"] = "arm-vita-eabi-gcc"
-    env["CXX"] = "arm-vita-eabi-g++"
-    env["LD"] = "arm-vita-eabi-ld"
-    env["AR"] = "arm-vita-eabi-ar"
-    env["STRIP"] = "arm-vita-eabi-strip"
-    env["RANLIB"] = "arm-vita-eabi-ranlib"
+    env["CC"] = "arm-dolce-eabi-gcc"
+    env["CXX"] = "arm-dolce-eabi-g++"
+    env["LD"] = "arm-dolce-eabi-ld"
+    env["AR"] = "arm-dolce-eabi-ar"
+    env["STRIP"] = "arm-dolce-eabi-strip"
+    env["RANLIB"] = "arm-dolce-eabi-ranlib"
     ## Build type
 
-    vita_sdk_path = os.environ.get("VITASDK")
+    vita_sdk_path = os.environ.get("DOLCESDK")
 
-    pkg_config_path = "{}/arm-vita-eabi/lib/pkgconfig/pkgconfig"
+    pkg_config_path = "{}/arm-dolce-eabi/lib/pkgconfig/pkgconfig"
 
     os.environ["PKG_CONFIG_PATH"] = pkg_config_path
     env['ENV']['PKG_CONFIG_PATH'] = pkg_config_path
 
 
-    env.Prepend(CPPPATH=['{}/arm-vita-eabi/include'.format(os.environ.get("VITASDK"))])
-    env.Prepend(CPPPATH=['{}/arm-vita-eabi/include/freetype2'.format(os.environ.get("VITASDK"))])
-    env.Prepend(CPPPATH=['{}/share/gcc-arm-vita-eabi/samples/common'.format(os.environ.get("VITASDK"))])
-    env.Append(LIBPATH=['{}/arm-vita-eabi/lib'.format(os.environ.get("VITASDK"))])
+    env.Prepend(CPPPATH=['{}/arm-dolce-eabi/include'.format(os.environ.get("DOLCESDK"))])
+    env.Prepend(CPPPATH=['{}/arm-dolce-eabi/include/freetype2'.format(os.environ.get("DOLCESDK"))])
+    env.Prepend(CPPPATH=['{}/arm-dolce-eabi/include/bullet'.format(os.environ.get("DOLCESDK"))])
+    env.Prepend(CPPPATH=['{}/share/gcc-arm-dolce-eabi/samples/common'.format(os.environ.get("DOLCESDK"))])
+    env.Append(LIBPATH=['{}/arm-dolce-eabi/lib'.format(os.environ.get("DOLCESDK"))])
     env.Prepend(LINKFLAGS=["-Wl,-q"])
     print(env.get("CCFLAGS"))
 
@@ -115,7 +121,7 @@ def configure(env):
         if (env["optimize"] == "speed"): #optimize for speed (default)
             env.Prepend(CCFLAGS=['-O2', '-ffast-math', '-DDEBUG_ENABLED'])
         else: #optimize for size
-            env.Prepend(CCFLAGS=['-Os', '-DDEBUG_ENABLED'])
+            env.Prepend(CCFLAGS=['-Os', '-DDEBUG_ENABLED', '-DDEBUG_MEMORY_ENABLED'])
 
         if (env["debug_symbols"] == "yes"):
             env.Prepend(CCFLAGS=['-g1'])
@@ -127,7 +133,6 @@ def configure(env):
         #env.Append(LINKFLAGS=['-rdynamic'])
 
         #env.Append(LINKFLAGS=['-rdynamic'])
-
     ## Architecture
 
     env["bits"] = "32"
@@ -141,15 +146,23 @@ def configure(env):
     env.Append(CPPPATH=['#platform/vita'])
     env.Append(CPPFLAGS=['-DLIBC_FILEIO_ENABLED', '-DOPENGL_ENABLED', '-DGLES_ENABLED'])
     env.Append(CPPFLAGS=['-DPTHREAD_NO_RENAME'])
+    env.Append(CCFLAGS=['-mtune=cortex-a9', '-mfpu=neon', '-ftree-vectorize'])
     env.Append(LIBS=[
         "pib",
         "SceLibKernel_stub",
-        "SceKernelThreadMgr_stub",
+        "SceAppMgrUser_stub",
         "SceIofilemgr_stub",
         "SceGxm_stub",
         "SceDisplay_stub",
         "SceFios2_stub",
-        "ogg"
+        "png",
+        "freetype",
+        "opus",
+        "vorbis",
+        "ogg",
+        "z",
+        "theora",
+        "pthread"
     ])
     print(env.get("LIBS"))
 

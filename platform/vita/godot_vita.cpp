@@ -2,6 +2,7 @@
 #include <psp2/kernel/processmgr.h>
 #include <psp2/message_dialog.h>
 #include <psp2/kernel/clib.h>
+#include <psp2/kernel/iofilemgr.h>
 
 #include <sys/syslimits.h>
 #include <stdlib.h>
@@ -13,9 +14,11 @@
 #include <pib.h>
 #include <EGL/egl.h>
 
-#define MEMORY_SCELIBC_MB 50
-#define MEMORY_NEWLIB_MB 30
+#include <psp2/kernel/modulemgr.h>
 
+#define MEMORY_SCELIBC_MB 15
+#define MEMORY_NEWLIB_MB 280
+# define SCE_NULL NULL
 extern "C"
 {
     unsigned int sleep(unsigned int seconds)
@@ -31,41 +34,21 @@ extern "C"
     }
     int sceLibcHeapSize = MEMORY_SCELIBC_MB * 1024 * 1024;
     int _newlib_heap_size_user = MEMORY_NEWLIB_MB * 1024 * 1024;
-    unsigned int sceUserMainThreadStackSize = 7 * 1024 * 1024;
+    unsigned int sceUserMainThreadStackSize = 4 * 1024 * 1024;
 }
 
+static char searchDir[200] = "ur0:data/external/"; // Max Path Length
+static char modulePath[200];
+
+static char *getModulePath(const char *moduleName)
+{
+    memset(modulePath, '\0', sizeof(modulePath));
+    strncpy(modulePath, searchDir, strlen(searchDir));
+    strncat(modulePath, moduleName, strlen(moduleName));
+    return modulePath;
+}
 
 int main(int argc, char *argv[]) {
-    PibError pibErr = pibInit((PibOptions)(PIB_SHACCCG, PIB_ENABLE_MSAA));
-    sceClibPrintf("pibInit result: %d\n", pibErr);
-    EGLint majorVersion;
-    EGLint minorVersion;
-    EGLint numConfigs = 0;
-    EGLConfig config;
-    EGLint configAttribs[] = {
-        //EGL_CONFIG_ID, 2,                         // You can always provide a configuration id. The one displayed here is Configuration 2
-        EGL_RED_SIZE, 8,                            // These four are always 8
-        EGL_GREEN_SIZE, 8,                          //
-        EGL_BLUE_SIZE, 8,                           //
-        EGL_ALPHA_SIZE, 8,                          //
-        EGL_DEPTH_SIZE, 32,                         // Depth is either 32 or 0 (16 does work as well, but has the same effect as using 32)
-        EGL_STENCIL_SIZE, 8,                        // Stencil Size is either 8 or 0
-        EGL_SURFACE_TYPE, 5,                        // This is ALWAYS 5
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,    // Always EGL_OPENGL_ES2_BIT or 0x4
-        EGL_NONE};
-    const EGLint contextAttribs[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
-        EGL_NONE };
-    EGLDisplay display = eglGetDisplay(0);
-    if (display == NULL) {
-        sceClibPrintf("eglGetDisplay returned null");
-    } else {
-        eglInitialize(display, &majorVersion, &minorVersion);  //
-    }
-    sceClibPrintf("postEGLDisplay\n");
-    sceKernelDelayThread(5*1000*1000);
-    sceKernelExitProcess(0);
-    return 0;
 	OS_Vita os;
     sceClibPrintf("Showing the path now UwU: %d %s\n", argc, argv[0]);
 	char* args[] = {"--path", "app0:/game_data"};

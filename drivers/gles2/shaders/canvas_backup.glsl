@@ -17,9 +17,9 @@ float2 select(float2 a, float2 b, bool2 c) {
 }
 
 #ifdef USE_LIGHTING
-static const bool at_light_pass = true;
+const bool at_light_pass = true;
 #else
-static const bool at_light_pass = false;
+const bool at_light_pass = false;
 #endif
 
 #include "stdlib.glsl"
@@ -107,23 +107,23 @@ uniform float light_height,
 uniform float light_outside_alpha,
 uniform float shadow_distance_mult,
 
-float4 out light_uv_interp: TEXCOORD2,
-float2 out transformed_light_uv: TEXCOORD3,
-float4 out local_rot: TEXCOORD4,
+float4 out light_uv_interp: TEXCOORD0,
+float2 out transformed_light_uv: TEXCOORD1,
+float4 out local_rot: TEXCOORD2,
 
 #ifdef USE_SHADOWS
-float2 out pos: TEXCOORD5,
+float2 out pos: TEXCOORD3,
 #endif
 #endif
 
 #ifdef USE_ATTRIB_MODULATE
 // modulate doesn't need interpolating but we need to send it to the fragment shader
-float4 out modulate_interp: TEXCOORD1
+float4 out modulate_interp: TEXCOORD7,
 #endif
-float2 out uv_interp: TEXCOORD0,
-float4 out color_interp: COLOR,
-float out gl_PointSize: PSIZE,
-float4 out gl_Position: POSITION
+float4 out gl_Position: POSITION,
+float2 out uv_interp: TEXCOORD4,
+float4 out color_interp: TEXCOORD5,
+float out gl_PointSize: TEXCOORD6
 ){
 	float4 color = color_attrib;
 	float2 uv;
@@ -234,7 +234,7 @@ float4 out gl_Position: POSITION
 #endif
 
 	uv_interp = uv;
-	gl_Position = mul(projection_matrix, outvec);
+	gl_Position = float4(0.0, 0.0, 0.0, 1.0);
 
 #ifdef USE_LIGHTING
 
@@ -283,9 +283,9 @@ float4 out gl_Position: POSITION
 [fragment]
 
 #ifdef USE_LIGHTING
-static const bool at_light_pass = true;
+const bool at_light_pass = true,
 #else
-static const bool at_light_pass = false;
+const bool at_light_pass = false,
 #endif
 #include "stdlib.glsl"
 
@@ -315,26 +315,17 @@ LIGHT_SHADER_CODE
 #endif
 }
 
-#if defined(final_modulate_alias)
-#undef final_modulate_alias
-#endif
-#ifdef USE_ATTRIB_MODULATE
-#define final_modulate_alias modulate_interp
-#else
-#define final_modulate_alias final_modulate
-#endif
-
-half4 main(
-
+void main(
 uniform sampler2D color_texture, // texunit:-1
 /* clang-format on */
 uniform float2 color_texpixel_size,
 uniform sampler2D normal_texture, // texunit:-2
 
-half4 color_interp: COLOR,
+half2 in uv_interp: TEXCOORD0,
+half4 in color_interp: TEXCOORD5,
 
 #ifdef USE_ATTRIB_MODULATE
-half4 modulate_interp: TEXCOORD1,
+half4 in modulate_interp: TEXCOORD7,
 #endif
 
 uniform float time,
@@ -368,23 +359,20 @@ uniform float light_outside_alpha,
 uniform float shadow_distance_mult,
 
 uniform lowp sampler2D light_texture, // texunit:-6
-float4 light_uv_interp: TEXCOORD2,
-float2 transformed_light_uv: TEXCOORD3,
+float4 in light_uv_interp: TEXCOORD0,
+float2 in transformed_light_uv: TEXCOORD1,
 
-float4 local_rot: TEXCOORD4,
+float4 in local_rot: TEXCOORD2,
 
 #ifdef USE_SHADOWS
 
 uniform sampler2D shadow_texture, // texunit:-5
-float2 pos: TEXCOORD5,
+float2 in pos: TEXCOORD3,
 
 #endif
-
-#else
 #endif
 
 uniform bool use_default_normal,
-half2 uv_interp: TEXCOORD0
 ) {
 
 	float4 color = color_interp;
@@ -396,7 +384,7 @@ half2 uv_interp: TEXCOORD0
 
 #if !defined(COLOR_USED)
 	//default behavior, texture by color
-	color = color * tex2D(color_texture, uv);
+	color = mul(color, texture2D(color_texture, uv));
 #endif
 
 #ifdef SCREEN_UV_USED
@@ -413,15 +401,46 @@ half2 uv_interp: TEXCOORD0
 #endif
 
 	if (use_default_normal) {
-		normal.xy = tex2D(normal_texture, uv).xy * 2.0 - 1.0;
+		normal.xy = texture2D(normal_texture, uv).xy * 2.0 - 1.0;
 		normal.z = sqrt(max(0.0, 1.0 - dot(normal.xy, normal.xy)));
 		normal_used = true;
 	} else {
 		normal = float3(0.0, 0.0, 1.0);
 	}
 
+	{
+		float normal_depth = 1.0;
+
+#if defined(NORMALMAP_USED)
+		float3 normal_map = float3(0.0, 0.0, 1.0);
+		normal_used = true;
+#endif
+
+		// If larger fvfs are used, final_modulate is passed as an attribute.
+		// we need to read from this in custom fragment shaders or applying in the post step,
+		// rather than using final_modulate directly.
+#if defined(final_modulate_alias)
+#undef final_modulate_alias
+#endif
+#ifdef USE_ATTRIB_MODULATE
+#define final_modulate_alias modulate_interp
+#else
+#define final_modulate_alias final_modulate
+#endif
+
+		/* clang-format off */
+
+FRAGMENT_SHADER_CODE
+
+		/* clang-format on */
+
+#if defined(NORMALMAP_USED)
+		normal = mix(float3(0.0, 0.0, 1.0), normal_map * float3(2.0, -2.0, 1.0) - float3(1.0, -1.0, 0.0), normal_depth);
+#endif
+	}
+
 #if !defined(MODULATE_USED)
-	color = color * float4(final_modulate_alias);
+	color = mul(color, final_modulate_alias);
 #endif
 
 #ifdef USE_LIGHTING
@@ -430,7 +449,7 @@ half2 uv_interp: TEXCOORD0
 	float2 shadow_vec = transformed_light_uv;
 
 	if (normal_used) {
-		normal.xy = mul(float2x2(local_rot.xy, local_rot.zw), normal.xy);
+		normal.xy = float2x2(local_rot.xy, local_rot.zw) * normal.xy;
 	}
 
 	float att = 1.0;
@@ -439,7 +458,7 @@ half2 uv_interp: TEXCOORD0
 	float4 light = texture2D(light_texture, light_uv);
 
 	if (any(lessThan(light_uv_interp.xy, float2(0.0, 0.0))) || any(greaterThanEqual(light_uv_interp.xy, float2(1.0, 1.0)))) {
-		color.a = mul(color.a, light_outside_alpha); //invisible
+		color.a = mul(light_outside_alpha, color.a); //invisible
 
 	} else {
 		float real_light_height = light_height;
@@ -464,7 +483,7 @@ half2 uv_interp: TEXCOORD0
 				color);
 #endif
 
-		light = mul(light, real_light_color);
+		light = mul(real_light_color, light);
 
 		if (normal_used) {
 			float3 light_normal = normalize(float3(light_vec, -real_light_height));
@@ -480,7 +499,7 @@ half2 uv_interp: TEXCOORD0
 		inverse_light_matrix[0] = normalize(inverse_light_matrix[0]);
 		inverse_light_matrix[1] = normalize(inverse_light_matrix[1]);
 		inverse_light_matrix[2] = normalize(inverse_light_matrix[2]);
-		shadow_vec = mul(inverse_light_matrix, float3(shadow_vec, 0.0)).xy;
+		shadow_vec = (inverse_light_matrix * float3(shadow_vec, 0.0)).xy;
 #else
 		shadow_vec = light_uv_interp.zw;
 #endif
@@ -511,7 +530,7 @@ half2 uv_interp: TEXCOORD0
 			sh = 0.75 + (1.0 / 8.0);
 		}
 
-		float4 s = mul(shadow_matrix, float4(point, 0.0, 1.0));
+		float4 s = shadow_matrix * float4(point, 0.0, 1.0);
 		s.xyz /= s.w;
 		su = s.x * 0.5 + 0.5;
 		sz = s.z * 0.5 + 0.5;
@@ -615,13 +634,13 @@ half2 uv_interp: TEXCOORD0
 #endif
 
 		//color *= shadow_attenuation;
-		color = lerp(real_light_shadow_color, color, shadow_attenuation);
+		color = mix(real_light_shadow_color, color, shadow_attenuation);
 //use shadows
 #endif
 	}
 
 //use lighting
 #endif
-	
-	return half4(color);
+
+	gl_FragColor = color;
 }

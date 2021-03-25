@@ -354,7 +354,7 @@ void RasterizerGLES2::set_boot_image(const Ref<Image> &p_image, const Color &p_c
 		glClearColor(p_color.r, p_color.g, p_color.b, 1.0);
 	}
 	glClear(GL_COLOR_BUFFER_BIT);
-
+	
 	canvas->canvas_begin();
 
 	RID texture = storage->texture_create();
