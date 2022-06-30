@@ -53,6 +53,10 @@
 
 void OS_Vita::initialize_core()
 {
+#if !defined(NO_THREADS)
+	init_thread_posix();
+#endif
+
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_RESOURCES);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_USERDATA);
 	FileAccess::make_default<FileAccessUnix>(FileAccess::ACCESS_FILESYSTEM);
@@ -163,9 +167,9 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
     gl_context->initialize();
 
 	RasterizerDummy::make_current();
-
+	sceClibPrintf("Initialize Audio\n");
 	AudioDriverManager::initialize(p_audio_driver);
-
+	sceClibPrintf("Initialize Audio Done\n");
     if (gles2) {
         if (RasterizerGLES2::is_viable() == OK) {
 			RasterizerGLES2::register_config();
@@ -174,20 +178,23 @@ Error OS_Vita::initialize(const VideoMode &p_desired, int p_video_driver, int p_
 			gl_initialization_error = true;
 		}
     }
-
+	sceClibPrintf("Before Error\n");
     if (gl_initialization_error) {
 		OS::get_singleton()->alert("Your video card driver does not support any of the supported OpenGL versions.\n"
 								   "Please update your drivers or if you have a very old or integrated GPU upgrade it.",
 				"Unable to initialize Video driver");
 		return ERR_UNAVAILABLE;
 	}
-
+	video_driver_index = p_video_driver;
+	sceClibPrintf("After Error\n");
 	visual_server = memnew(VisualServerRaster);
+	if (get_render_thread_mode() != RENDER_THREAD_UNSAFE) {
+		visual_server = memnew(VisualServerWrapMT(visual_server, false));
+	}
 
-    video_driver_index = p_video_driver;
-
+	sceClibPrintf("Start Visual Server\n");
 	visual_server->init();
-
+	sceClibPrintf("Done Initializing\n");
 	return OK;
 }
 

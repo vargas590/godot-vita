@@ -301,7 +301,10 @@ Error DirAccessUnix::make_dir(String p_dir) {
 
 Error DirAccessUnix::change_dir(String p_dir) {
 	GLOBAL_LOCK_FUNCTION
-
+#ifdef VITA_ENABLED
+	current_dir = p_dir;
+	return OK;
+#else
 	p_dir = fix_path(p_dir);
 
 	// prev_dir is the directory we are changing out of
@@ -342,6 +345,7 @@ Error DirAccessUnix::change_dir(String p_dir) {
 	current_dir = try_dir;
 	ERR_FAIL_COND_V(chdir(prev_dir.utf8().get_data()) != 0, ERR_BUG);
 	return OK;
+#endif
 }
 
 String DirAccessUnix::get_current_dir() {
@@ -483,6 +487,10 @@ DirAccessUnix::DirAccessUnix() {
 	/* determine drive count */
 
 	// set current directory to an absolute path of the current directory
+#ifdef VITA_ENABLED
+	current_dir = "app0:/game_data";
+	change_dir("app0:/game_data");
+#else
 	char real_current_dir_name[2048];
 	ERR_FAIL_COND(getcwd(real_current_dir_name, 2048) == nullptr);
 	if (current_dir.parse_utf8(real_current_dir_name)) {
@@ -490,6 +498,7 @@ DirAccessUnix::DirAccessUnix() {
 	}
 
 	change_dir(current_dir);
+#endif
 }
 
 DirAccessUnix::~DirAccessUnix() {

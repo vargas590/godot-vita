@@ -29,9 +29,8 @@
 /*************************************************************************/
 
 #include "platform_config.h"
-#ifndef PLATFORM_THREAD_OVERRIDE // See details in thread.h
 
-#include "thread.h"
+#include "platform_thread.h"
 #include <psp2/kernel/clib.h>
 
 #include "core/script_language.h"
@@ -45,12 +44,7 @@ void (*Thread::set_priority_func)(Thread::Priority) = nullptr;
 void (*Thread::init_func)() = nullptr;
 void (*Thread::term_func)() = nullptr;
 
-uint64_t Thread::_thread_id_hash(const std::thread::id &p_t) {
-	static std::hash<std::thread::id> hasher;
-	return hasher(p_t);
-}
-
-Thread::ID Thread::main_thread_id = _thread_id_hash(std::this_thread::get_id());
+Thread::ID Thread::main_thread_id = sceKernelGetThreadId();
 static thread_local Thread::ID caller_id = 0;
 static thread_local bool caller_id_cached = false;
 
@@ -65,71 +59,57 @@ void Thread::_set_platform_funcs(
 	Thread::term_func = p_term_func;
 }
 
-void Thread::callback(Thread *p_self, const Settings &p_settings, Callback p_callback, void *p_userdata) {
-	caller_id = _thread_id_hash(p_self->thread.get_id());
-	caller_id_cached = true;
-
-	if (set_priority_func) {
-		set_priority_func(p_settings.priority);
-	}
-	if (init_func) {
-		init_func();
-	}
-	ScriptServer::thread_enter(); //scripts may need to attach a stack
-	p_callback(p_userdata);
+int Thread::callback(uint32_t argSize, void *pArgBlock) {
+    sceClibPrintf("Callback Cast\n");
+    ThreadData *data = (ThreadData *)(pArgBlock);
+    sceClibPrintf("Callback Enter\n");
+    ScriptServer::thread_enter(); //scripts may need to attach a stack
+    sceClibPrintf("Callback Run\n");
+    printf("Thread Data in Thread: %p\n", data->userdata);
+	data->callback(data->userdata);
+    sceClibPrintf("Callback Exit\n");
 	ScriptServer::thread_exit();
-	if (term_func) {
-		term_func();
-	}
+    sceClibPrintf("Callback Over\n");
+    return 0;
 }
 
 void Thread::start(Thread::Callback p_callback, void *p_user, const Settings &p_settings) {
 	sceClibPrintf("New Thread\n");
-	if (id != _thread_id_hash(std::thread::id())) {
-#ifdef DEBUG_ENABLED
-		WARN_PRINT("A Thread object has been re-started without wait_to_finish() having been called on it. Please do so to ensure correct cleanup of the thread.");
-#endif
-		thread.detach();
-		std::thread empty_thread;
-		thread.swap(empty_thread);
-	}
-	std::thread new_thread(&Thread::callback, this, p_settings, p_callback, p_user);
-	thread.swap(new_thread);
-	id = _thread_id_hash(thread.get_id());
+    ThreadData data;
+    data.callback = p_callback;
+    data.userdata = p_user;
+    printf("Thread Data: %p\n", p_user);
+	id = sceKernelCreateThread("GodotThread", Thread::callback, 0x10000100, 0x4000, 0, 0, NULL);
+    sceKernelStartThread(id, sizeof(ThreadData), &data);
 	sceClibPrintf("Created Thread\n");
 }
 
 bool Thread::is_started() const {
-	return id != _thread_id_hash(std::thread::id());
+	return id >= 0;
 }
 
 void Thread::wait_to_finish() {
 	sceClibPrintf("Finish Thread\n");
-	if (id != _thread_id_hash(std::thread::id())) {
-		ERR_FAIL_COND_MSG(id == get_caller_id(), "A Thread can't wait for itself to finish.");
-		thread.join();
-		std::thread empty_thread;
-		thread.swap(empty_thread);
-		id = _thread_id_hash(std::thread::id());
+	if (id != -1) {
+		ERR_FAIL_COND_MSG(id == sceKernelGetThreadId(), "A Thread can't wait for itself to finish.");
+		sceKernelWaitThreadEnd(id, NULL, NULL);
+        sceKernelDeleteThread(id);
+        id = -1;
 	}
 	sceClibPrintf("Finished Thread\n");
 }
 
 Error Thread::set_name(const String &p_name) {
-	if (set_name_func) {
-		return set_name_func(p_name);
-	}
-
 	return ERR_UNAVAILABLE;
 }
 
 Thread::~Thread() {
 	sceClibPrintf("Delete Thread\n");
-	if (id != _thread_id_hash(std::thread::id())) {
+	if (id != -1) {
 #ifdef DEBUG_ENABLED
 		WARN_PRINT("A Thread object has been destroyed without wait_to_finish() having been called on it. Please do so to ensure correct cleanup of the thread.");
 #endif
-		thread.detach();
+		sceKernelDeleteThread(id);
 	}
 	sceClibPrintf("Deleted Thread\n");
 }
@@ -138,10 +118,9 @@ Thread::ID Thread::get_caller_id() {
 	if (likely(caller_id_cached)) {
 		return caller_id;
 	} else {
-		caller_id = _thread_id_hash(std::this_thread::get_id());
+		caller_id = sceKernelGetThreadId();
 		caller_id_cached = true;
 		return caller_id;
 	}
 }
 #endif
-#endif // PLATFORM_THREAD_OVERRIDE

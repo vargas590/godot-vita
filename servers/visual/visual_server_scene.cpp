@@ -34,6 +34,8 @@
 #include "visual_server_globals.h"
 #include "visual_server_raster.h"
 
+#include <psp2/kernel/clib.h>
+
 #include <new>
 
 /* CAMERA API */
@@ -4090,6 +4092,7 @@ bool VisualServerScene::free(RID p_rid) {
 VisualServerScene *VisualServerScene::singleton = nullptr;
 
 VisualServerScene::VisualServerScene() {
+	sceClibPrintf("VisualServerScene::VisualServerScene() Thread\n");
 	probe_bake_thread.start(_gi_probe_bake_threads, this);
 	probe_bake_thread_exit = false;
 
