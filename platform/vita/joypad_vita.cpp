@@ -27,10 +27,16 @@ void JoypadVita::process() {
     rx = ((pad_input.rx) / 255.0f) * 2.0 - 1.0;
     ry = ((pad_input.ry) / 255.0f) * 2.0 - 1.0;
 
-    input->set_joy_axis(0, JOY_AXIS_0, lx);
-    input->set_joy_axis(0, JOY_AXIS_1, ly);
-    input->set_joy_axis(0, JOY_AXIS_2, rx);
-    input->set_joy_axis(0, JOY_AXIS_3, ry);
+    InputDefault::JoyAxis jlx, jly, jrx, jry;
+    jlx.value = lx;
+    jly.value = ly;
+    jrx.value = rx;
+    jry.value = ry;
+
+    input->joy_axis(0, JOY_AXIS_0, jlx);
+    input->joy_axis(0, JOY_AXIS_1, jly);
+    input->joy_axis(0, JOY_AXIS_2, jrx);
+    input->joy_axis(0, JOY_AXIS_3, jry);
 
     changed = old_pad_input.buttons ^ pad_input.buttons;
     old_pad_input = pad_input;
