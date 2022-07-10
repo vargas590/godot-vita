@@ -38,6 +38,7 @@
 #include "servers/visual/visual_server_raster.h"
 
 #include <psp2/appmgr.h>
+#include <psp2/power.h>
 #include <psp2/kernel/processmgr.h>
 
 class OS_Vita : public OS {

@@ -1264,7 +1264,11 @@ void RasterizerStorageGLES2::sky_set_texture(RID p_sky, RID p_panorama, int p_ra
 			glCopyTexSubImage2D(_cube_side_enum[i], lod, 0, 0, 0, 0, size, size);
 		}
 
+#ifdef VITA_ENABLED
+		size = 0;
+#else
 		size >>= 1;
+#endif
 
 		mm_level--;
 

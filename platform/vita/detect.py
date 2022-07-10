@@ -17,7 +17,7 @@ def can_build():
     return True
 
 def get_opts():
-
+    
     from SCons.Variables import BoolVariable, EnumVariable
 
     return [
@@ -31,48 +31,27 @@ def get_opts():
 def get_flags():
     return [
         ("tools", False),
-        ('builtin_bullet', False),
+        ('builtin_bullet', True),
         ('builtin_enet', False), # Not in portlibs.
-        ('builtin_freetype', False),
+        #('builtin_freetype', False),
         ('builtin_libogg', False),
-        ('builtin_libpng', False),
-        ('builtin_libtheora', False),
-        ('builtin_libvorbis', False),
         ('builtin_libvpx', False),
-        ('builtin_libwebp', True),
         ('builtin_libwebsockets', True), # Not in portlibs.
         ('builtin_mbedtls', False),
         ('builtin_miniupnpc', False),
         ('builtin_opus', False),
-        ('builtin_pcre2', False),
+        ('builtin_pcre2', True),
+        ('builtin_pcre2_with_jit', False),
         ('builtin_squish', True), # Not in portlibs.
-        ('builtin_zlib', False),
         ('builtin_zstd', True), # Not in portlibs.
         ('module_websocket_enabled', False),
         ('module_mbedtls_enabled', False),
         ('module_upnp_enabled', False),
         ('module_enet_enabled', False),
         ('module_gdnative_enabled', False),
-        ('module_regex_enabled', False),
+        ('module_regex_enabled', True),
         ('module_webm_enabled', False),
         ('module_mobile_vr_enabled', False),
-        ('module_csg_enabled', False),
-        ('module_dds_enabled', False),
-        ('module_visual_script_enabled', False),
-        ('disable_3d', True),
-        ('minizip', False),
-        ('disable_advanced_gui', True),
-        ('deprecated', False),
-        ('module_gdnavigation_enabled', False),
-        ('module_gridmap_enabled', False),
-        ('module_hdr_enabled', False),
-        ('module_opensimplex_enabled', False),
-        ('module_visual_script_enabled', False),
-        ('module_bullet_enabled', False),
-        ('module_webxr_enabled', False),
-        ('module_jsonrpc_enabled', False),
-        ('module_jpg_enabled', False),
-        ('module_tga_enabled', False)
         ]
 
 
@@ -97,10 +76,10 @@ def configure(env):
     env.Prepend(CPPPATH=['{}/arm-vita-eabi/include/freetype2'.format(os.environ.get("VITASDK"))])
     env.Prepend(CPPPATH=['{}/share/gcc-arm-vita-eabi/samples/common'.format(os.environ.get("VITASDK"))])
     env.Append(LIBPATH=['{}/arm-vita-eabi/lib'.format(os.environ.get("VITASDK"))])
-    env.Prepend(LINKFLAGS=["-Wl,-q"])
+    env.Append(LINKFLAGS=["-Wl,-q,-whole-archive", "-lpthread", "-Wl,-q,-no-whole-archive"])
     print(env.get("CCFLAGS"))
 
-    env.Prepend(CCFLAGS=['-Wl,-q', '-fpermissive', '-D_POSIX_TIMERS', '-DNO_THREADS', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"', '-D__psp2__'])
+    env.Prepend(CCFLAGS=['-Wl,-q', '-D_POSIX_TIMERS', '-DPTHREAD_ENABLED', '-DUNIX_SOCKET_UNAVAILABLE', '-DVITA_ENABLED', '-DPOSH_COMPILER_GCC', '-DPOSH_OS_VITA', '-DPOSH_OS_STRING=\\"vita\\"', '-D__psp2__'])
 
 
     if (env["target"] == "release"):
@@ -110,7 +89,7 @@ def configure(env):
             env.Prepend(CCFLAGS=['-O3', '-ffast-math'])
         else: #optimize for size
             env.Prepend(CCFLAGS=['-Os'])
-
+     
         if (env["debug_symbols"] == "yes"):
             env.Prepend(CCFLAGS=['-g1'])
         if (env["debug_symbols"] == "full"):
@@ -134,6 +113,7 @@ def configure(env):
         #env.Append(LINKFLAGS=['-rdynamic'])
 
     ## Architecture
+
     env["bits"] = "32"
 
     ## Flags
@@ -145,8 +125,9 @@ def configure(env):
     env.Append(CPPPATH=['#platform/vita'])
     env.Append(CPPFLAGS=['-DLIBC_FILEIO_ENABLED', '-DGLES_ENABLED'])
     env.Append(CPPFLAGS=['-DPTHREAD_NO_RENAME'])
-    env.Append(CCFLAGS=['-mtune=cortex-a9', '-mfpu=neon', '-ftree-vectorize'])
+    env.Append(CCFLAGS=['-mtune=cortex-a9', '-mfpu=neon', '-fpermissive', '-ftree-vectorize'])
     env.Append(LIBS=[
+        "taihen_stub",
         "SceLibKernel_stub",
         "SceKernelThreadMgr_stub",
         "SceAppMgr_stub",
@@ -154,6 +135,10 @@ def configure(env):
         "SceSysmodule_stub",
         "SceDisplay_stub",
         "SceFios2_stub",
+        "SceCtrl_stub",
+        "SceTouch_stub",
+        "SceAudio_stub",
+        "ScePower_stub",
         "jpeg",
         "png",
         "freetype",
@@ -162,9 +147,10 @@ def configure(env):
         "ogg",
         "z",
         "theora",
-        "pthread",
         "-llibgpu_es4_ext_stub.a",
         "-llibIMGEGL_stub.a",
         "-llibGLESv2_stub.a",
     ])
     print(env.get("LIBS"))
+
+#-lglad -lEGL -lglapi -ldrm_nouveau 

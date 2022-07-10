@@ -2158,9 +2158,9 @@ bool Main::iteration() {
 	bool exit = false;
 
 	for (int iters = 0; iters < advance.physics_steps; ++iters) {
-		if (InputDefault::get_singleton()->is_using_input_buffering() && agile_input_event_flushing) {
-			InputDefault::get_singleton()->flush_buffered_events();
-		}
+		//if (InputDefault::get_singleton()->is_using_input_buffering() && agile_input_event_flushing) {
+		//	InputDefault::get_singleton()->flush_buffered_events();
+		//}
 
 		Engine::get_singleton()->_in_physics = true;
 
@@ -2192,9 +2192,9 @@ bool Main::iteration() {
 		Engine::get_singleton()->_in_physics = false;
 	}
 
-	if (InputDefault::get_singleton()->is_using_input_buffering() && agile_input_event_flushing) {
-		InputDefault::get_singleton()->flush_buffered_events();
-	}
+	//if (InputDefault::get_singleton()->is_using_input_buffering() && agile_input_event_flushing) {
+	//	InputDefault::get_singleton()->flush_buffered_events();
+	//}
 
 	uint64_t idle_begin = OS::get_singleton()->get_ticks_usec();
 
@@ -2269,9 +2269,9 @@ bool Main::iteration() {
 	iterating--;
 
 	// Needed for OSs using input buffering regardless accumulation (like Android)
-	if (InputDefault::get_singleton()->is_using_input_buffering() && !agile_input_event_flushing) {
-		InputDefault::get_singleton()->flush_buffered_events();
-	}
+	//if (InputDefault::get_singleton()->is_using_input_buffering() && !agile_input_event_flushing) {
+	//	InputDefault::get_singleton()->flush_buffered_events();
+	//}
 
 	if (fixed_fps != -1) {
 		return exit;
