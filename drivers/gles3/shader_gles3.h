@@ -96,7 +96,6 @@ private:
 	//@TODO Optimize to a fixed set of shader pools and use a LRU
 	int uniform_count;
 	int texunit_pair_count;
-	int shadow_texunit_count;
 	int conditional_count;
 	int ubo_count;
 	int feedback_count;
@@ -246,7 +245,6 @@ private:
 	const char **uniform_names;
 	const AttributePair *attribute_pairs;
 	const TexUnitPair *texunit_pairs;
-	const int *shadow_texunits;
 	const UBOPair *ubo_pairs;
 	const Feedback *feedbacks;
 	const char *vertex_code;
@@ -280,7 +278,6 @@ private:
 	static ShaderGLES3 *active;
 
 	int max_image_units;
-	GLuint depth_tex = 0;
 
 	_FORCE_INLINE_ void _set_uniform_variant(GLint p_uniform, const Variant &p_value) {
 		if (p_uniform < 0) {
@@ -372,13 +369,13 @@ private:
 	}
 
 	bool _bind(bool p_binding_fallback);
-	bool _bind_ubershader();
+	bool _bind_ubershader(bool p_for_warmrup = false);
 
 protected:
 	_FORCE_INLINE_ int _get_uniform(int p_which) const;
 	_FORCE_INLINE_ void _set_conditional(int p_which, bool p_value);
 
-	void setup(const char **p_conditional_defines, int p_conditional_count, const char **p_uniform_names, int p_uniform_count, const AttributePair *p_attribute_pairs, int p_attribute_count, const TexUnitPair *p_texunit_pairs, int p_texunit_pair_count, const int *p_shadow_texunits, int p_shadow_texunit_count, const UBOPair *p_ubo_pairs, int p_ubo_pair_count, const Feedback *p_feedback, int p_feedback_count, const char *p_vertex_code, const char *p_fragment_code, int p_vertex_code_start, int p_fragment_code_start);
+	void setup(const char **p_conditional_defines, int p_conditional_count, const char **p_uniform_names, int p_uniform_count, const AttributePair *p_attribute_pairs, int p_attribute_count, const TexUnitPair *p_texunit_pairs, int p_texunit_pair_count, const UBOPair *p_ubo_pairs, int p_ubo_pair_count, const Feedback *p_feedback, int p_feedback_count, const char *p_vertex_code, const char *p_fragment_code, int p_vertex_code_start, int p_fragment_code_start);
 
 	ShaderGLES3();
 
@@ -390,9 +387,7 @@ public:
 	GLint get_uniform_location(const String &p_name) const;
 	GLint get_uniform_location(int p_index) const;
 
-	static _FORCE_INLINE_ ShaderGLES3 *get_active() {
-		return active;
-	};
+	static _FORCE_INLINE_ ShaderGLES3 *get_active() { return active; };
 	bool bind();
 	void unbind();
 
@@ -404,18 +399,11 @@ public:
 	void free_custom_shader(uint32_t p_code_id);
 	bool is_custom_code_ready_for_render(uint32_t p_code_id);
 
-	uint32_t get_version() const {
-		return new_conditional_version.version;
-	}
-	bool is_version_ubershader() const {
-		return (new_conditional_version.version & VersionKey::UBERSHADER_FLAG);
-	}
-	_FORCE_INLINE_ bool is_version_valid() const {
-		return version && version->compile_status == Version::COMPILE_STATUS_OK;
-	}
+	uint32_t get_version() const { return new_conditional_version.version; }
+	_FORCE_INLINE_ bool is_version_valid() const { return version && version->compile_status == Version::COMPILE_STATUS_OK; }
 
 	virtual void init() = 0;
-	void init_async_compilation(GLuint p_depth_tex);
+	void init_async_compilation();
 	bool is_async_compilation_supported();
 	void finish();
 
