@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:trusty-20190425
 MAINTAINER Mohammad Rezai, https://github.com/mrezai
 WORKDIR /godot-dev
 COPY scripts/install-android-tools /godot-dev/
